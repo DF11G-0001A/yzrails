@@ -1,0 +1,2198 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>铁路旅客信息查询系统</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, "Microsoft YaHei", sans-serif;
+            background: #f0f3f8;
+            padding: 12px;
+            color: #1a2634;
+            font-size: 16px;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .card {
+            background: white; border-radius: 12px;
+            padding: 14px 16px; margin-bottom: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .btn {
+            width: 100%; padding: 12px;
+            background: #1a73e8; color: white; border: none; border-radius: 8px;
+            font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.15s;
+            margin-top: 6px;
+        }
+        .btn:active { background: #0f5bb5; transform: scale(0.97); }
+        .btn-secondary { background: #e8edf4; color: #1e2a3a; }
+        .btn-danger { background: #d93025; color: white; }
+        .btn-success { background: #1e8e3e; color: white; }
+        .btn-warning { background: #e37400; color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 14px; width: auto; margin: 2px; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-checkout {
+            background: #1e8e3e; color: white; border: none;
+            padding: 4px 12px; border-radius: 6px; font-size: 13px;
+            cursor: pointer;
+        }
+        .back-row {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+        }
+        .back-row .back-btn {
+            background: none; border: none; font-size: 28px; cursor: pointer;
+            padding: 0 4px; color: #1a2634;
+        }
+        .back-row h2 { font-size: 20px; color: #0b2a4a; flex: 1; }
+        .home-title {
+            font-size: 24px; font-weight: 700; color: #0b2a4a;
+            text-align: center; margin: 20px 0 8px;
+        }
+        .home-sub { text-align: center; color: #6b7f96; font-size: 14px; margin-bottom: 20px; }
+        .home-buttons {
+            display: flex; gap: 12px; flex-wrap: wrap;
+        }
+        .home-buttons .btn {
+            flex: 1; margin-top: 0; padding: 16px 10px; font-size: 16px;
+            min-width: 70px;
+        }
+        .home-buttons .btn-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+        .status { font-size: 15px; color: #1e7e34; margin-top: 6px; font-weight: 500; }
+        .status.error { color: #b33c3c; }
+        label { font-weight: 600; font-size: 15px; display: block; margin-bottom: 3px; color: #2c3e50; }
+        input[type="file"], input[type="text"], input[type="number"], input[type="date"] {
+            width: 100%; padding: 10px 12px;
+            border: 1px solid #d0d9e6; border-radius: 8px;
+            font-size: 15px; background: #fafcff;
+        }
+        input[type="file"] { padding: 8px; }
+        .row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .row>div { flex: 1; min-width: 100px; }
+        .sort-group {
+            display: flex; gap: 8px; margin: 8px 0 4px;
+        }
+        .sort-group .btn-sort {
+            flex: 1; padding: 8px; border: 2px solid #d0d9e6;
+            background: white; border-radius: 8px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            color: #2c3e50;
+        }
+        .sort-group .btn-sort.active {
+            border-color: #1a73e8; background: #e8f0fe; color: #1a73e8;
+        }
+        .result-box {
+            background: white; border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .result-header {
+            padding: 12px 16px 8px 16px;
+            font-weight: 600; font-size: 15px;
+            border-bottom: 1px solid #e9edf4;
+        }
+        .result-header span { color: #1a73e8; }
+        .no-result { text-align: center; padding: 30px 16px; color: #6b7f96; font-size: 15px; }
+        .train-row {
+            display: flex; align-items: center;
+            padding: 10px 12px; border-bottom: 1px solid #f0f3f8;
+            cursor: pointer; gap: 6px; flex-wrap: wrap;
+        }
+        .train-row:active { background: #eef3fb; }
+        .train-row .checi {
+            font-weight: 700; color: #003b6f;
+            min-width: 60px; font-size: 15px;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .train-row .checi .badge-fuxing {
+            background: #ffd700; color: #1a1a1a;
+            font-size: 10px; font-weight: 700;
+            padding: 1px 5px; border-radius: 4px;
+        }
+        .train-row .route-info {
+            flex: 1; font-size: 14px;
+            display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+        }
+        .train-row .route-info .stop-time { font-weight: 700; }
+        .train-row .route-info .arrow-symbol { color: #8899aa; font-size: 13px; }
+        .train-row .duration {
+            background: #eef3f8; padding: 1px 10px; border-radius: 12px;
+            font-size: 12px; color: #2c5a7a; font-weight: 500;
+        }
+        .train-row .price-2nd {
+            background: #e6f0f9; padding: 1px 10px; border-radius: 12px;
+            font-size: 12px; color: #0b5e8a; font-weight: 600;
+        }
+        .train-row .expand-icon {
+            color: #8899aa; font-size: 13px;
+            transition: transform 0.2s; margin-left: auto;
+        }
+        .train-row .expand-icon.open { transform: rotate(180deg); }
+        .stop-detail {
+            background: #f8fafc;
+            padding: 6px 16px 12px 16px;
+            border-bottom: 1px solid #e9edf4;
+            display: none;
+            font-size: 15px;
+        }
+        .stop-detail.open { display: block; }
+        .stop-item {
+            display: flex; align-items: center;
+            padding: 4px 0; gap: 8px;
+            font-size: 15px;
+        }
+        .stop-item .stop-name { flex: 1; font-weight: 600; }
+        .stop-item .stop-time {
+            font-family: monospace; font-size: 14px;
+            min-width: 48px; text-align: right;
+        }
+        .stop-item .stop-time.arrive { color: #0b5e8a; }
+        .stop-item .stop-time.depart { color: #1a73e8; }
+        .stop-item.in-range .stop-name { color: #1a73e8; font-weight: 700; }
+        .stop-item.in-range .stop-time { color: #1a73e8; font-weight: 700; }
+        .stop-item.out-range .stop-name { color: #8899aa; }
+        .stop-item.out-range .stop-time { color: #a0b0c0; }
+        .stop-divider { text-align: center; color: #b0c4de; font-size: 13px; padding: 2px 0; }
+        .stop-header {
+            display: flex; padding: 4px 0 2px 0;
+            font-size: 13px; font-weight: 600; color: #4a5a6e;
+            border-bottom: 1px solid #dce3ec;
+        }
+        .stop-header .h-name { flex: 1; }
+        .stop-header .h-time { width: 48px; text-align: right; }
+        .stop-footer {
+            margin-top: 6px; padding-top: 6px;
+            border-top: 1px solid #dce3ec;
+            font-size: 14px; color: #2c3e50;
+        }
+        .stop-footer .label { font-weight: 600; color: #1a3a5a; }
+        .user-info {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 0; border-bottom: 1px solid #e9edf4;
+        }
+        .user-info .avatar {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: #1a73e8; color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: 700;
+        }
+        .user-info .detail { flex: 1; }
+        .user-info .detail .name { font-size: 18px; font-weight: 600; }
+        .user-info .detail .stats { font-size: 13px; color: #6b7f96; }
+        .badge-row {
+            display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0;
+        }
+        .badge-row .badge {
+            background: #eef3f8; padding: 4px 12px; border-radius: 20px;
+            font-size: 13px; color: #2c3e50;
+        }
+        .badge-row .badge .num { font-weight: 700; color: #1a73e8; }
+        .order-item {
+            background: #f8fafc; border-radius: 8px; padding: 10px 12px;
+            margin-bottom: 8px; border-left: 4px solid #1a73e8;
+            font-size: 14px;
+        }
+        .order-item .order-header {
+            display: flex; justify-content: space-between; font-weight: 600;
+        }
+        .order-item .order-detail {
+            display: flex; flex-wrap: wrap; gap: 6px 12px;
+            margin-top: 4px; color: #4a5a6e;
+        }
+        .order-item .order-detail span { font-size: 13px; }
+        .order-item .refund-btn {
+            margin-top: 6px; padding: 4px 12px; font-size: 13px;
+            background: #d93025; color: white; border: none; border-radius: 6px;
+            cursor: pointer;
+        }
+        .order-item .refund-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .trip-card {
+            background: #f8fafc; border-radius: 10px; padding: 12px 14px;
+            margin-bottom: 10px; border-left: 4px solid #1a73e8;
+            cursor: pointer;
+            position: relative;
+            transition: opacity 0.3s;
+        }
+        .trip-card.arrived {
+            opacity: 0.6;
+            background: #e9edf4;
+            border-left-color: #8899aa;
+        }
+        .trip-card .trip-header {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 17px; font-weight: 700;
+        }
+        .trip-card .trip-header .checi { color: #003b6f; }
+        .trip-card .trip-header .date { font-weight: 400; font-size: 14px; color: #6b7f96; }
+        .trip-card .trip-route {
+            font-size: 18px; font-weight: 700; margin: 6px 0;
+        }
+        .trip-card .trip-route .time { color: #1a73e8; font-size: 20px; }
+        .trip-card .trip-route .arrow { color: #8899aa; margin: 0 6px; }
+        .trip-card .trip-detail {
+            font-size: 15px; color: #4a5a6e;
+            display: flex; flex-wrap: wrap; gap: 8px 16px;
+            margin-top: 4px;
+        }
+        .trip-card .trip-detail .countdown { color: #e37400; font-weight: 600; }
+        .trip-card .trip-detail .arrived-label { color: #6b7f96; font-weight: 600; }
+        .trip-card .trip-stop-detail {
+            margin-top: 8px; border-top: 1px solid #e9edf4; padding-top: 6px;
+        }
+        .trip-card .trip-stop-detail .stop-item {
+            font-size: 14px; padding: 3px 0;
+        }
+        .trip-card .trip-stop-detail .stop-item.in-range .stop-name { color: #1a73e8; font-weight: 700; }
+        .trip-card .trip-stop-detail .stop-item.out-range .stop-name { color: #8899aa; }
+        .trip-card .delete-trip {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #d93025;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .trip-card .delete-trip:hover { background: #ffebee; }
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: none;
+            align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: white; border-radius: 16px; padding: 20px;
+            max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+        .modal h3 { margin-bottom: 12px; color: #0b2a4a; }
+        .modal .close-btn {
+            float: right; background: none; border: none; font-size: 24px;
+            cursor: pointer; color: #6b7f96;
+        }
+        .modal .seat-grid {
+            display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0;
+        }
+        .modal .seat-grid .seat-btn {
+            padding: 8px 16px; border: 1px solid #d0d9e6;
+            border-radius: 6px; background: white; cursor: pointer;
+            font-size: 14px;
+        }
+        .modal .seat-grid .seat-btn.selected {
+            border-color: #1a73e8; background: #e8f0fe;
+        }
+        .modal .pay-row {
+            display: flex; gap: 10px; margin: 10px 0;
+        }
+        .modal .pay-row .btn { flex: 1; margin-top: 0; }
+        .confirm-modal .modal { text-align: center; }
+        .confirm-modal .countdown {
+            font-size: 24px; font-weight: 700; color: #d93025; margin: 10px 0;
+        }
+        .screen-tabs {
+            display: flex; gap: 8px; margin-bottom: 10px;
+        }
+        .screen-tabs .tab {
+            flex: 1; padding: 8px; border: 2px solid #d0d9e6;
+            border-radius: 8px; background: white; font-weight: 600; cursor: pointer;
+            text-align: center;
+        }
+        .screen-tabs .tab.active {
+            border-color: #1a73e8; background: #e8f0fe; color: #1a73e8;
+        }
+        .screen-mode-toggle {
+            display: flex; gap: 6px; margin: 8px 0;
+        }
+        .screen-mode-toggle .mode-btn {
+            flex: 1; padding: 6px; border: 1px solid #d0d9e6;
+            border-radius: 6px; background: white; cursor: pointer;
+            font-size: 13px; font-weight: 600;
+        }
+        .screen-mode-toggle .mode-btn.active {
+            border-color: #1a73e8; background: #e8f0fe; color: #1a73e8;
+        }
+        .status-badge {
+            font-weight: 600; font-size: 13px;
+        }
+        .status-badge.checking { color: #1e8e3e; }
+        .status-badge.stopped { color: #d93025; }
+        .status-badge.waiting { color: #1a2634; }
+        .status-badge.arrived { color: #6b7f96; }
+        .status-badge.ontime { color: #0b5e8a; }
+        .refresh-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: #1a73e8;
+            transition: 0.15s;
+        }
+        .refresh-btn:hover { background: #e8f0fe; }
+        .refresh-btn:active { transform: rotate(60deg); }
+        .screen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .screen-header .title { font-weight: 600; font-size: 16px; color: #0b2a4a; }
+        .discount-badge {
+            font-size: 11px;
+            color: #e37400;
+            background: #fff3e0;
+            padding: 1px 6px;
+            border-radius: 10px;
+            margin-left: 4px;
+            font-weight: 600;
+        }
+        .book-btn {
+            background: #e37400;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .book-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        @media (max-width: 480px) {
+            .row { flex-direction: column; gap: 6px; }
+            .home-buttons .btn { font-size: 14px; padding: 12px; }
+            .train-row { padding: 8px 10px; }
+            .train-row .checi { min-width: 50px; font-size: 14px; }
+            .train-row .route-info { font-size: 13px; }
+            .modal { padding: 16px; }
+            .trip-card .trip-route { font-size: 16px; }
+            .trip-card .trip-route .time { font-size: 18px; }
+            .book-btn { font-size: 14px; padding: 5px 12px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <!-- 首页 -->
+    <div class="page active" id="page-home">
+        <div class="home-title">🚄 铁路旅客信息查询系统</div>
+        <div class="home-sub">基于运行图数据 · 离线使用</div>
+        <div class="card" id="userStatusBar" style="display:none; padding:8px 16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span id="userStatusName" style="font-weight:600;">用户</span>
+                <span id="userStatusBalance" style="color:#0b5e8a;">余额: ¥0</span>
+                <span id="userStatusPoints" style="color:#e37400;">积分: 0</span>
+                <button class="refresh-btn" id="homeRefreshBtn" title="刷新">🔄</button>
+            </div>
+        </div>
+        <div class="card">
+            <label>📂 加载运行图数据文件（.json / .txt）</label>
+            <input type="file" id="fileInputHome" accept=".json,.txt">
+            <div id="statusMsgHome" class="status">请选择文件加载数据</div>
+        </div>
+        <div class="home-buttons">
+            <button class="btn" id="gotoTravel"><span class="btn-icon">🚆</span>出行查询</button>
+            <button class="btn" id="gotoScreen"><span class="btn-icon">🖥️</span>车站大屏</button>
+            <button class="btn" id="gotoTimetable"><span class="btn-icon">📅</span>时刻表</button>
+            <button class="btn" id="gotoMe"><span class="btn-icon">👤</span>我的</button>
+        </div>
+        <div style="margin-top:20px; text-align:center; font-size:13px; color:#8899aa;">数据加载后，所有功能共享同一份数据</div>
+        <div id="upcomingTrips" style="margin-top:12px;"></div>
+    </div>
+
+    <!-- 出行查询页 -->
+    <div class="page" id="page-travel">
+        <div class="back-row"><button class="back-btn" id="backHomeFromTravel">‹</button><h2>🚆 出行查询</h2></div>
+        <div class="card">
+            <div class="row"><div><label>起点站</label><input type="text" id="startStation" placeholder="如：源州东"></div><div><label>终点站</label><input type="text" id="endStation" placeholder="如：临广东"></div></div>
+            <div class="row" style="margin-top:6px;">
+                <div><label>日期</label><input type="date" id="travelDate" style="padding:8px 10px;"></div>
+                <div style="display:flex; align-items:flex-end; gap:6px;">
+                    <button class="btn btn-sm btn-secondary" id="prevDayBtn" style="margin:0;">◀</button>
+                    <span id="dateDisplay" style="font-weight:600; padding:8px 0; min-width:80px; text-align:center;"></span>
+                    <button class="btn btn-sm btn-secondary" id="nextDayBtn" style="margin:0;">▶</button>
+                </div>
+            </div>
+            <div class="sort-group">
+                <button class="btn-sort active" data-sort="time">⏰ 时间排序</button>
+                <button class="btn-sort" data-sort="speed">🚀 速度优先</button>
+            </div>
+            <button class="btn" id="searchBtn">🔍 查询</button>
+        </div>
+        <div id="resultAreaTravel" class="result-box"><div class="no-result">请输入车站并点击查询</div></div>
+    </div>
+
+    <!-- 车站大屏页 -->
+    <div class="page" id="page-screen">
+        <div class="back-row"><button class="back-btn" id="backHomeFromScreen">‹</button><h2>🖥️ 车站大屏</h2></div>
+        <div class="card">
+            <label>车站名称</label><input type="text" id="screenStation" placeholder="如：源州东">
+            <div class="screen-tabs">
+                <button class="tab active" data-direction="depart">🚉 出发</button>
+                <button class="tab" data-direction="arrive">🏁 到达</button>
+            </div>
+            <div class="screen-mode-toggle">
+                <button class="mode-btn active" data-mode="realtime">实时模式</button>
+                <button class="mode-btn" data-mode="all">车站车次</button>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button class="btn" id="screenSearchBtn" style="flex:1;">📋 显示大屏</button>
+                <button class="refresh-btn" id="screenRefreshBtn" title="刷新" style="font-size:24px; padding:8px 12px;">🔄</button>
+            </div>
+        </div>
+        <div id="resultAreaScreen" class="result-box"><div class="no-result">输入车站，选择方向，点击显示</div></div>
+    </div>
+
+    <!-- 时刻表页 -->
+    <div class="page" id="page-timetable">
+        <div class="back-row"><button class="back-btn" id="backHomeFromTimetable">‹</button><h2>📅 时刻表</h2></div>
+        <div class="card">
+            <label>输入车次</label><input type="text" id="timetableCheci" placeholder="如：G141 或 G161">
+            <button class="btn" id="timetableSearchBtn">🔍 查询</button>
+        </div>
+        <div id="resultAreaTimetable" class="result-box"><div class="no-result">请输入车次并点击查询</div></div>
+    </div>
+
+    <!-- 我的页 -->
+    <div class="page" id="page-me">
+        <div class="back-row"><button class="back-btn" id="backHomeFromMe">‹</button><h2>👤 我的</h2></div>
+        <div id="loginArea" class="card">
+            <label>昵称</label><input type="text" id="nicknameInput" placeholder="请输入您的昵称">
+            <button class="btn" id="loginBtn">登录 / 注册</button>
+            <div id="loginMsg" class="status" style="color:#b33c3c;"></div>
+        </div>
+        <div id="userArea" style="display:none;">
+            <div class="card">
+                <div class="user-info">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <div class="detail">
+                        <div class="name" id="userName">用户</div>
+                        <div class="stats" id="userStats">余额: ¥0 &nbsp;|&nbsp; 积分: 0</div>
+                    </div>
+                </div>
+                <div class="badge-row">
+                    <span class="badge">💰 余额: <span class="num" id="balanceDisplay">0.00</span></span>
+                    <span class="badge">⭐ 积分: <span class="num" id="pointsDisplay">0</span></span>
+                    <span class="badge">📅 签到: <span class="num" id="signDays">0</span>天</span>
+                </div>
+                <button class="btn btn-sm btn-success" id="signBtn" style="width:auto;margin:4px 0;">✅ 签到 (+200)</button>
+                <span id="signMsg" style="font-size:13px;color:#6b7f96;margin-left:8px;"></span>
+            </div>
+            <div class="card">
+                <h3 style="font-size:16px;margin-bottom:8px;">📋 我的订单</h3>
+                <div id="orderList"><div style="color:#6b7f96;font-size:14px;">暂无订单</div></div>
+            </div>
+            <div class="card">
+                <button class="btn btn-danger" id="logoutBtn">🚪 退出登录</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 购票弹窗 -->
+<div class="modal-overlay" id="bookingModal">
+    <div class="modal">
+        <button class="close-btn" id="modalCloseBtn">✕</button>
+        <h3 id="modalTitle">预定车票</h3>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<!-- 退票确认弹窗 -->
+<div class="modal-overlay confirm-modal" id="refundConfirmModal">
+    <div class="modal">
+        <h3>⚠️ 确认退票</h3>
+        <p style="margin:16px 0;">真的要退票吗？</p>
+        <div class="countdown" id="refundCountdown">5s</div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn btn-secondary" id="refundCancelBtn">返回</button>
+            <button class="btn btn-danger" id="refundConfirmBtn" disabled>退票</button>
+        </div>
+    </div>
+</div>
+
+<!-- 退出确认弹窗 -->
+<div class="modal-overlay confirm-modal" id="logoutConfirmModal">
+    <div class="modal">
+        <h3>⚠️ 确认退出</h3>
+        <p style="margin:16px 0;">确定要退出吗？退出后账户信息将会清空！</p>
+        <div class="countdown" id="logoutCountdown">30s</div>
+        <div style="display:flex; gap:12px;">
+            <button class="btn btn-secondary" id="logoutCancelBtn">返回</button>
+            <button class="btn btn-danger" id="logoutConfirmBtn" disabled>确定退出</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // 全局数据
+    // ============================================================
+    let trainData = [];
+    let checiToModel = {};
+    let checiToOwner = {};
+    let lineStationMaps = {};
+    let currentSort = 'time';
+    let lastTravelResult = null;
+    let currentUser = null;
+    const STORAGE_KEY = 'railway_user_data';
+
+    // 动卧列车列表
+    const SLEEPER_TRAINS = ['D4713', 'D4714'];
+
+    const YUANGUANG_MILEAGE = {
+        "源州东": 0, "广信所": 10, "会津南": 65, "平远东": 145,
+        "文平东": 215, "泰兴东": 255, "双潭北": 295, "临广东": 375
+    };
+    const stationAliasMap = {
+        "源州东": ["源州东", "源 州东", "源州 东"],
+        "源州市": ["源州东", "源 州东", "源州 东", "源州西", "源兴"]
+    };
+    const BIG_STATIONS = ['开北南', '沧兴西', '源州东', '临广东', '延海', '盐城南', '芷江西', '杭台西'];
+    const SPECIAL_STATION = '开北南';
+
+    // ============================================================
+    // 工具函数：获取列车类型
+    // ============================================================
+    function getTrainType(checi, train) {
+        if (train && train.type) {
+            const t = train.type.trim();
+            if (t.includes('高速')) return 'G';
+            if (t.includes('城际')) return 'C';
+            if (t.includes('动车组')) return 'D';
+        }
+        if (checi) {
+            const prefix = checi.charAt(0).toUpperCase();
+            if (['G','C','D'].includes(prefix)) return prefix;
+        }
+        return 'G';
+    }
+
+    // ============================================================
+    // 票价计算（新规则）
+    // ============================================================
+    function calcFares(mileage, model, trainType) {
+        if (mileage === null || mileage <= 0) return null;
+        const isF = isFuxing(model);
+        let rates = {};
+        if (trainType === 'G' || trainType === 'C') {
+            rates.second = isF ? 0.45 : 0.40;
+            rates.first = isF ? 0.70 : 0.65;
+            rates.business = isF ? 1.50 : 1.40;
+        } else if (trainType === 'D') {
+            rates.second = 0.40;
+            rates.first = 0.60;
+            rates.business = null;
+        } else {
+            rates.second = 0.40;
+            rates.first = 0.60;
+            rates.business = null;
+        }
+        const second = Math.round(mileage * rates.second * 2) / 2;
+        const first = Math.round(mileage * rates.first * 2) / 2;
+        const business = rates.business !== null ? Math.round(mileage * rates.business * 2) / 2 : null;
+        return { second, first, business };
+    }
+
+    // ============================================================
+    // 用户系统
+    // ============================================================
+    function loadUserData() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try { currentUser = JSON.parse(saved); return true; } catch(e) {}
+        }
+        return false;
+    }
+    function saveUserData() {
+        if (currentUser) localStorage.setItem(STORAGE_KEY, JSON.stringify(currentUser));
+    }
+    function createNewUser(nickname) {
+        return { nickname, balance: 0, points: 0, signDays: 0, lastSignDate: null, orders: [], history: [] };
+    }
+    function getTodayStr() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    }
+    function isToday(dateStr) { return dateStr === getTodayStr(); }
+    function isTomorrow(dateStr) {
+        const today = new Date();
+        const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+        const ts = tomorrow.getFullYear() + '-' + String(tomorrow.getMonth()+1).padStart(2,'0') + '-' + String(tomorrow.getDate()).padStart(2,'0');
+        return dateStr === ts;
+    }
+    function formatDateDisplay(dateStr) {
+        let display = dateStr;
+        if (isToday(dateStr)) display += ' (今天)';
+        else if (isTomorrow(dateStr)) display += ' (明天)';
+        return display;
+    }
+    function parseDateStr(dateStr) {
+        const parts = dateStr.split('-');
+        return new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+    }
+    function daysBetween(d1, d2) {
+        const t1 = parseDateStr(d1).getTime();
+        const t2 = parseDateStr(d2).getTime();
+        return Math.floor((t2 - t1) / (24*60*60*1000));
+    }
+
+    function doSign() {
+        if (!currentUser) return;
+        const today = getTodayStr();
+        if (currentUser.lastSignDate === today) {
+            document.getElementById('signMsg').textContent = '今天已签到！';
+            return;
+        }
+        currentUser.balance += 200;
+        currentUser.signDays = (currentUser.signDays || 0) + 1;
+        currentUser.lastSignDate = today;
+        saveUserData();
+        updateUserUI();
+        document.getElementById('signMsg').textContent = '✅ 签到成功 +200';
+        setTimeout(() => { document.getElementById('signMsg').textContent = ''; }, 3000);
+    }
+
+    function updateUserUI() {
+        if (!currentUser) {
+            document.getElementById('userArea').style.display = 'none';
+            document.getElementById('loginArea').style.display = 'block';
+            document.getElementById('userStatusBar').style.display = 'none';
+            return;
+        }
+        document.getElementById('loginArea').style.display = 'none';
+        document.getElementById('userArea').style.display = 'block';
+        document.getElementById('userStatusBar').style.display = 'flex';
+        document.getElementById('userName').textContent = currentUser.nickname;
+        document.getElementById('userAvatar').textContent = currentUser.nickname.charAt(0).toUpperCase();
+        document.getElementById('balanceDisplay').textContent = currentUser.balance.toFixed(2);
+        document.getElementById('pointsDisplay').textContent = currentUser.points;
+        document.getElementById('signDays').textContent = currentUser.signDays || 0;
+        document.getElementById('userStats').textContent = `余额: ¥${currentUser.balance.toFixed(2)}  |  积分: ${currentUser.points}`;
+        document.getElementById('userStatusName').textContent = currentUser.nickname;
+        document.getElementById('userStatusBalance').textContent = `余额: ¥${currentUser.balance.toFixed(2)}`;
+        document.getElementById('userStatusPoints').textContent = `积分: ${currentUser.points}`;
+        renderOrders();
+        renderUpcomingTrips();
+    }
+
+    // ============================================================
+    // 订单渲染
+    // ============================================================
+    function renderOrders() {
+        const container = document.getElementById('orderList');
+        if (!currentUser || currentUser.orders.length === 0) {
+            container.innerHTML = '<div style="color:#6b7f96;font-size:14px;">暂无订单</div>';
+            return;
+        }
+        let html = '';
+        const orders = [...currentUser.orders].reverse();
+        orders.forEach((order, idx) => {
+            const realIdx = currentUser.orders.length - 1 - idx;
+            const isRefunded = order.status === 'refunded';
+            const isCash = order.paymentMethod === 'cash';
+            const now = new Date();
+            const orderDate = order.date;
+            const departParts = order.departTime.split(':');
+            const orderDateTime = new Date(parseDateStr(orderDate));
+            orderDateTime.setHours(parseInt(departParts[0]), parseInt(departParts[1]), 0, 0);
+            const isDeparted = now > orderDateTime;
+            const canRefund = !isRefunded && isCash && !isDeparted;
+
+            html += `<div class="order-item">
+                <div class="order-header"><span>${order.checi}  ${order.start} → ${order.end}</span><span style="font-size:13px;color:#6b7f96;">${order.date}</span></div>
+                <div class="order-detail">
+                    <span>${order.departTime} → ${order.arriveTime}</span>
+                    <span>历时 ${order.duration}</span>
+                    <span>${order.seatClass} ${order.seat}</span>
+                    <span>¥${order.amount.toFixed(2)}</span>
+                    <span style="color:${isRefunded ? '#d93025' : '#1e8e3e'};">${isRefunded ? '已退票' : '已出票'}</span>
+                </div>
+                ${canRefund ? `<button class="refund-btn" data-order-idx="${realIdx}">退票</button>` : ''}
+            </div>`;
+        });
+        container.innerHTML = html;
+        container.querySelectorAll('.refund-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const idx = parseInt(this.dataset.orderIdx);
+                showRefundConfirm(idx);
+            });
+        });
+    }
+
+    // ============================================================
+    // 退票确认弹窗
+    // ============================================================
+    let refundTargetIdx = null;
+    let refundTimer = null;
+    let refundCountdown = 5;
+
+    function showRefundConfirm(idx) {
+        refundTargetIdx = idx;
+        const modal = document.getElementById('refundConfirmModal');
+        modal.classList.add('show');
+        refundCountdown = 5;
+        document.getElementById('refundCountdown').textContent = refundCountdown + 's';
+        document.getElementById('refundConfirmBtn').disabled = true;
+        if (refundTimer) clearInterval(refundTimer);
+        refundTimer = setInterval(() => {
+            refundCountdown--;
+            document.getElementById('refundCountdown').textContent = refundCountdown + 's';
+            if (refundCountdown <= 0) {
+                clearInterval(refundTimer);
+                refundTimer = null;
+                document.getElementById('refundConfirmBtn').disabled = false;
+            }
+        }, 1000);
+    }
+    document.getElementById('refundCancelBtn').addEventListener('click', function() {
+        document.getElementById('refundConfirmModal').classList.remove('show');
+        if (refundTimer) { clearInterval(refundTimer); refundTimer = null; }
+        refundTargetIdx = null;
+    });
+    document.getElementById('refundConfirmBtn').addEventListener('click', function() {
+        if (refundTargetIdx === null) return;
+        const idx = refundTargetIdx;
+        const order = currentUser.orders[idx];
+        if (!order || order.status === 'refunded') return;
+        if (order.paymentMethod !== 'cash') {
+            alert('积分支付的订单不支持退票');
+            return;
+        }
+        const today = getTodayStr();
+        const days = daysBetween(today, order.date);
+        let refundRate = 1;
+        if (days <= 0) refundRate = 0.75;
+        else if (days <= 3) refundRate = 0.9;
+        const refundAmount = order.amount * refundRate;
+        let rounded = Math.round(refundAmount * 2) / 2;
+        const fractional = rounded - Math.floor(rounded);
+        if (fractional === 0.25) rounded = Math.floor(rounded);
+        else if (fractional === 0.75) rounded = Math.floor(rounded) + 1;
+        rounded = Math.min(rounded, order.amount);
+        currentUser.balance += rounded;
+        order.status = 'refunded';
+        order.refundAmount = rounded;
+        saveUserData();
+        updateUserUI();
+        document.getElementById('refundConfirmModal').classList.remove('show');
+        if (refundTimer) { clearInterval(refundTimer); refundTimer = null; }
+        refundTargetIdx = null;
+        alert(`退票成功，退款 ¥${rounded.toFixed(2)} (${refundRate*100}%)`);
+    });
+    document.getElementById('refundConfirmModal').addEventListener('click', function(e) {
+        if (e.target === this) document.getElementById('refundCancelBtn').click();
+    });
+
+    // ============================================================
+    // 首页行程卡片（跨日算法 + 出站兑现积分 + 车型/担当）
+    // ============================================================
+    function renderUpcomingTrips() {
+        const container = document.getElementById('upcomingTrips');
+        if (!currentUser || currentUser.orders.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+        const now = new Date();
+        const upcoming = currentUser.orders.filter(o => o.status !== 'refunded');
+
+        const trips = upcoming.map((order, idx) => {
+            const realIdx = currentUser.orders.indexOf(order);
+            const depParts = order.departTime.split(':');
+            const arrParts = order.arriveTime.split(':');
+            const depDateTime = new Date(parseDateStr(order.date));
+            depDateTime.setHours(parseInt(depParts[0]), parseInt(depParts[1]), 0, 0);
+            const arrDateTime = new Date(parseDateStr(order.date));
+            arrDateTime.setHours(parseInt(arrParts[0]), parseInt(arrParts[1]), 0, 0);
+            if (arrDateTime < depDateTime) arrDateTime.setDate(arrDateTime.getDate() + 1);
+
+            const isDeparted = now > depDateTime;
+            const isArrived = now > arrDateTime;
+            const isCompleted = order.completed === true;
+
+            let countdown = '';
+            let arrivalCountdown = '';
+            if (!isDeparted) {
+                const diffMs = depDateTime - now;
+                const diffMin = Math.floor(diffMs / (60 * 1000));
+                if (diffMin > 0) {
+                    const h = Math.floor(diffMin / 60);
+                    const m = diffMin % 60;
+                    countdown = `${h}时${m}分后出发`;
+                } else {
+                    countdown = '即将出发';
+                }
+            } else if (isDeparted && !isArrived) {
+                const diffMs = arrDateTime - now;
+                const diffMin = Math.floor(diffMs / (60 * 1000));
+                if (diffMin > 0) {
+                    const h = Math.floor(diffMin / 60);
+                    const m = diffMin % 60;
+                    arrivalCountdown = `预计 ${h}时${m}分后到达`;
+                } else {
+                    arrivalCountdown = '即将到达';
+                }
+            }
+
+            const { model, owner } = getModelAndOwner(order.checi);
+            const canCheckout = isArrived && !isCompleted;
+            const trainType = getTrainType(order.checi, null);
+
+            return {
+                ...order,
+                realIdx,
+                depDateTime,
+                arrDateTime,
+                isDeparted,
+                isArrived,
+                isCompleted,
+                countdown,
+                arrivalCountdown,
+                model: model || '--',
+                owner: owner || '--',
+                canCheckout,
+                trainType
+            };
+        });
+
+        const sorted = trips.filter(t => !t.isArrived || t.canCheckout || t.isCompleted)
+                           .sort((a,b) => a.depDateTime - b.depDateTime);
+
+        if (sorted.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '<div style="font-weight:700;font-size:18px;margin-bottom:10px;">📌 我的行程</div>';
+        sorted.forEach(trip => {
+            const arrivedClass = trip.isArrived ? 'arrived' : '';
+            const arrivedLabel = trip.isArrived ? (trip.isCompleted ? ' ✅ 已出站' : ' ✅ 已到站') : '';
+
+            let statusHtml = '';
+            if (trip.isArrived && trip.isCompleted) {
+                statusHtml = `<span class="arrived-label">已出站</span>`;
+            } else if (trip.isArrived && !trip.isCompleted) {
+                statusHtml = `<span class="countdown" style="color:#1a73e8;">已到站，点击出站兑现积分</span>`;
+            } else if (trip.isDeparted && !trip.isArrived) {
+                statusHtml = `<span class="countdown" style="color:#e37400;">${trip.arrivalCountdown}</span>`;
+            } else if (!trip.isDeparted) {
+                statusHtml = `<span class="countdown">${trip.countdown}</span>`;
+            }
+
+            const modelBadge = trip.model && trip.model !== '--' ? `车型：${trip.model}` : '';
+            const ownerBadge = trip.owner && trip.owner !== '--' ? `担当：${trip.owner}` : '';
+
+            html += `<div class="trip-card ${arrivedClass}" data-order-idx="${trip.realIdx}" data-checi="${trip.checi}" data-start="${trip.start}" data-end="${trip.end}">
+                <div class="trip-header">
+                    <span class="checi">${trip.checi}</span>
+                    <span class="date">${trip.date}${arrivedLabel}</span>
+                </div>
+                <div class="trip-route">
+                    <span>${trip.start}</span>
+                    <span class="time">${trip.departTime}</span>
+                    <span class="arrow">→</span>
+                    <span>${trip.end}</span>
+                    <span class="time">${trip.arriveTime}</span>
+                </div>
+                <div class="trip-detail">
+                    <span>历时 ${trip.duration}</span>
+                    <span>${trip.seatClass} ${trip.seat}</span>
+                    ${modelBadge ? `<span>${modelBadge}</span>` : ''}
+                    ${ownerBadge ? `<span>${ownerBadge}</span>` : ''}
+                    ${statusHtml}
+                </div>
+                <div class="trip-stop-detail" style="display:none;"></div>
+                ${trip.canCheckout ? `<button class="btn-checkout" onclick="checkoutTrip('${trip.realIdx}')" style="margin-top:4px;">🚪 出站兑现积分</button>` : ''}
+                ${trip.isArrived && trip.isCompleted ? `<button class="delete-trip" onclick="deleteCompletedTrip('${trip.realIdx}')">✕</button>` : ''}
+            </div>`;
+        });
+
+        container.innerHTML = html;
+
+        document.querySelectorAll('.trip-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.classList.contains('delete-trip') || e.target.classList.contains('btn-checkout')) return;
+                const detail = this.querySelector('.trip-stop-detail');
+                if (detail.style.display === 'block') { detail.style.display = 'none'; return; }
+                const checi = this.dataset.checi;
+                const start = this.dataset.start;
+                const end = this.dataset.end;
+                const result = queryTimetable(checi);
+                if (result.error) {
+                    detail.innerHTML = `<div style="color:#6b7f96;font-size:14px;">${result.error}</div>`;
+                    detail.style.display = 'block';
+                    return;
+                }
+                const stops = result.businessStops;
+                let si = -1, ei = -1;
+                stops.forEach((st, idx) => {
+                    if (st.zhanming === start) si = idx;
+                    if (st.zhanming === end) ei = idx;
+                });
+                let html = '<div style="font-size:14px;font-weight:600;margin-bottom:4px;">时刻表</div>';
+                html += `<div class="stop-header"><span class="h-name">车站</span><span class="h-time">到站</span><span class="h-time">发车</span></div>`;
+                if (si !== -1 && ei !== -1 && si <= ei) {
+                    stops.forEach((st, idx) => {
+                        const inRange = (idx >= si && idx <= ei);
+                        const cls = inRange ? 'in-range' : 'out-range';
+                        const at = (idx === 0) ? '始' : (st.ddsj ? trimSeconds(st.ddsj) : '');
+                        const dt = (idx === stops.length-1) ? '终' : (st.cfsj ? trimSeconds(st.cfsj) : '');
+                        html += `<div class="stop-item ${cls}">
+                            <span class="stop-name">${st.zhanming}</span>
+                            <span class="stop-time arrive">${at}</span>
+                            <span class="stop-time depart">${dt}</span>
+                        </div>`;
+                        if (idx === ei) html += `<div class="stop-divider">━━━ 乘车区段结束 ━━━</div>`;
+                    });
+                } else {
+                    stops.forEach(st => {
+                        const at = (st.ddsj ? trimSeconds(st.ddsj) : '');
+                        const dt = (st.cfsj ? trimSeconds(st.cfsj) : '');
+                        html += `<div class="stop-item out-range">
+                            <span class="stop-name">${st.zhanming}</span>
+                            <span class="stop-time arrive">${at}</span>
+                            <span class="stop-time depart">${dt}</span>
+                        </div>`;
+                    });
+                }
+                detail.innerHTML = html;
+                detail.style.display = 'block';
+            });
+        });
+    }
+
+    // ============================================================
+    // 出站兑现积分
+    // ============================================================
+    window.checkoutTrip = function(orderIdx) {
+        const order = currentUser.orders[orderIdx];
+        if (!order || order.status === 'refunded' || order.completed) return;
+
+        const now = new Date();
+        const arrParts = order.arriveTime.split(':');
+        const arrDateTime = new Date(parseDateStr(order.date));
+        arrDateTime.setHours(parseInt(arrParts[0]), parseInt(arrParts[1]), 0, 0);
+        if (arrDateTime < new Date(parseDateStr(order.date)).setHours(parseInt(order.departTime.split(':')[0]), parseInt(order.departTime.split(':')[1]), 0, 0)) {
+            arrDateTime.setDate(arrDateTime.getDate() + 1);
+        }
+
+        if (now < arrDateTime) {
+            alert('列车尚未到站，不能出站');
+            return;
+        }
+
+        const earnedPoints = Math.floor(order.amount);
+        if (order.pendingPoints !== undefined && order.pendingPoints > 0) {
+            alert('已出站，积分已兑现');
+            return;
+        }
+
+        currentUser.points += earnedPoints;
+        order.completed = true;
+        order.pendingPoints = earnedPoints;
+        saveUserData();
+        updateUserUI();
+        alert(`出站成功！获得 ${earnedPoints} 积分`);
+    };
+
+    window.deleteCompletedTrip = function(orderIdx) {
+        if (confirm('确定要删除这条已出站的记录吗？')) {
+            currentUser.orders.splice(orderIdx, 1);
+            saveUserData();
+            updateUserUI();
+        }
+    };
+
+    // ============================================================
+    // 车厢号分配（含动卧、D车无商务座）
+    // ============================================================
+    function getCarriageNumber(model, seatClass, checi) {
+        if (!model) model = '';
+        const isSleeper = SLEEPER_TRAINS.includes(checi || '');
+        const trainType = getTrainType(checi, null);
+        const isAorBorL = /-A|-B|L/.test(model);
+        const isHeavy = /重连/.test(model);
+        const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const pad = (num) => String(num).padStart(2, '0');
+
+        if (isSleeper) {
+            if (seatClass === '二等座') return pad(rand(0, 1) === 0 ? 1 : 17);
+            else if (seatClass === '动卧下铺' || seatClass === '动卧上铺') return pad(rand(2, 16));
+            return '01';
+        }
+
+        if (trainType === 'D' && seatClass === '商务座') {
+            // D车无商务座，按一等座分配车厢
+            if (isAorBorL) return '17';
+            else if (isHeavy) return pad(rand(8, 9));
+            else return '08';
+        }
+
+        if (isAorBorL) {
+            if (seatClass === '二等座') return pad(rand(2, 16));
+            else if (seatClass === '一等座') return '17';
+            else if (seatClass === '商务座') return '01';
+        } else if (isHeavy) {
+            if (seatClass === '二等座') {
+                const group = rand(0, 1);
+                if (group === 0) return pad(rand(2, 7));
+                else return pad(rand(10, 15));
+            } else if (seatClass === '一等座') return pad(rand(8, 9));
+            else if (seatClass === '商务座') return pad(rand(0, 1) === 0 ? 1 : 16);
+        } else {
+            if (seatClass === '二等座') return pad(rand(2, 7));
+            else if (seatClass === '一等座') return '08';
+            else if (seatClass === '商务座') return '01';
+        }
+        return '01';
+    }
+
+    function getSleeperSeat() {
+        const seatNum = Math.floor(Math.random() * 40) + 1;
+        const isLower = seatNum % 2 === 1;
+        const berthType = isLower ? '下铺' : '上铺';
+        const roomNum = Math.ceil(seatNum / 4);
+        return { seatNum, berthType, roomNum, display: `${roomNum}包厢${String(seatNum).padStart(2,'0')}号${berthType}` };
+    }
+
+    // ============================================================
+    // 购票逻辑（动卧价格：下铺贵 上铺便宜）
+    // ============================================================
+    let currentBooking = null;
+
+    function openBookingModal(trainItem, dateStr) {
+        if (!currentUser) {
+            alert('请先登录');
+            return;
+        }
+        const isSleeper = SLEEPER_TRAINS.includes(trainItem.checi || '');
+        const trainType = getTrainType(trainItem.checi, null);
+        const mileage = trainItem.totalMile || 300;
+        const fares = calcFares(mileage, trainItem.model, trainType);
+        let sleeperPrice = null;
+        if (isSleeper && fares) {
+            // 下铺 = 一等座 + 0.05*里程，上铺 = 一等座
+            sleeperPrice = {
+                lower: fares.first + 0.05 * mileage,
+                upper: fares.first
+            };
+        }
+
+        currentBooking = {
+            checi: trainItem.checi,
+            start: trainItem.startStation,
+            end: trainItem.endStation,
+            departTime: trainItem.depart,
+            arriveTime: trainItem.arrive,
+            duration: trainItem.duration,
+            date: dateStr,
+            model: trainItem.model,
+            owner: trainItem.owner,
+            isSleeper: isSleeper,
+            trainType: trainType,
+            fares: fares,
+            sleeperPrice: sleeperPrice,
+            totalMile: mileage
+        };
+
+        if (trainItem.seatClass) {
+            const cls = trainItem.seatClass;
+            currentBooking.seatClass = cls;
+            let amount = 0;
+            if (cls === '二等座') amount = fares.second;
+            else if (cls === '一等座') amount = fares.first;
+            else if (cls === '商务座') amount = fares.business;
+            else if (cls === '动卧下铺') amount = sleeperPrice.lower;
+            else if (cls === '动卧上铺') amount = sleeperPrice.upper;
+            currentBooking.amount = Math.round(amount * 2) / 2;
+            showBookingStep('seat');
+            return;
+        }
+
+        showBookingStep('seatClass');
+    }
+
+    function showBookingStep(step) {
+        const modal = document.getElementById('bookingModal');
+        const content = document.getElementById('modalContent');
+        modal.classList.add('show');
+
+        if (step === 'seatClass') {
+            const isD = currentBooking.trainType === 'D';
+            const isSleeper = currentBooking.isSleeper;
+            let buttonsHtml = '';
+
+            if (isSleeper) {
+                const basePrice = currentBooking.fares.second;
+                const lowerPrice = currentBooking.sleeperPrice.lower;
+                const upperPrice = currentBooking.sleeperPrice.upper;
+                buttonsHtml = `
+                    <button class="btn btn-sm btn-secondary" data-class="二等座" style="flex:1;">二等座 ¥${basePrice.toFixed(2)}</button>
+                    <button class="btn btn-sm btn-secondary" data-class="动卧下铺" style="flex:1;">动卧下铺 ¥${lowerPrice.toFixed(2)} <span class="discount-badge">(6折)</span></button>
+                    <button class="btn btn-sm btn-secondary" data-class="动卧上铺" style="flex:1;">动卧上铺 ¥${upperPrice.toFixed(2)} <span class="discount-badge">(6折)</span></button>
+                `;
+            } else {
+                const second = currentBooking.fares.second;
+                const first = currentBooking.fares.first;
+                const business = currentBooking.fares.business;
+                let businessBtn = '';
+                if (business !== null && !isD) {
+                    businessBtn = `<button class="btn btn-sm btn-secondary" data-class="商务座" style="flex:1;">商务座 ¥${business.toFixed(2)}</button>`;
+                }
+                buttonsHtml = `
+                    <button class="btn btn-sm btn-secondary" data-class="二等座" style="flex:1;">二等座 ¥${second.toFixed(2)}</button>
+                    <button class="btn btn-sm btn-secondary" data-class="一等座" style="flex:1;">一等座 ¥${first.toFixed(2)}</button>
+                    ${businessBtn}
+                `;
+            }
+
+            content.innerHTML = `
+                <p style="margin-bottom:10px;">选择席别</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    ${buttonsHtml}
+                </div>
+                <button class="btn btn-sm btn-secondary" id="cancelBookingBtn" style="margin-top:10px;">取消</button>
+            `;
+            content.querySelectorAll('[data-class]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const cls = this.dataset.class;
+                    currentBooking.seatClass = cls;
+                    let amount = 0;
+                    if (cls === '二等座') amount = currentBooking.fares.second;
+                    else if (cls === '一等座') amount = currentBooking.fares.first;
+                    else if (cls === '商务座') amount = currentBooking.fares.business;
+                    else if (cls === '动卧下铺') amount = currentBooking.sleeperPrice.lower;
+                    else if (cls === '动卧上铺') amount = currentBooking.sleeperPrice.upper;
+                    currentBooking.amount = Math.round(amount * 2) / 2;
+                    showBookingStep('seat');
+                });
+            });
+            document.getElementById('cancelBookingBtn').addEventListener('click', closeBookingModal);
+
+        } else if (step === 'seat') {
+            const seatClass = currentBooking.seatClass;
+
+            if (seatClass === '动卧下铺' || seatClass === '动卧上铺') {
+                const carriage = getCarriageNumber(currentBooking.model, '动卧', currentBooking.checi);
+                const berthType = seatClass === '动卧下铺' ? '下铺' : '上铺';
+                let seatNum = (berthType === '下铺') ? Math.floor(Math.random() * 20) * 2 + 1 : Math.floor(Math.random() * 20) * 2 + 2;
+                const roomNum = Math.ceil(seatNum / 4);
+                const seatDisplay = `${carriage}车${roomNum}包厢${String(seatNum).padStart(2,'0')}号${berthType}`;
+                currentBooking.carriage = carriage;
+                currentBooking.seatDisplay = seatDisplay;
+
+                content.innerHTML = `
+                    <p style="margin-bottom:6px;"><strong>${currentBooking.checi}</strong> ${currentBooking.start} → ${currentBooking.end}</p>
+                    <p style="font-size:14px;color:#4a5a6e;">${currentBooking.departTime} → ${currentBooking.arriveTime} 历时 ${currentBooking.duration}</p>
+                    <p style="font-size:14px;color:#4a5a6e;">${currentBooking.seatClass} ${seatDisplay}  ¥${currentBooking.amount.toFixed(2)} <span class="discount-badge">(6折)</span></p>
+                    <div class="pay-row">
+                        <button class="btn btn-success" id="payCashBtn">现金支付</button>
+                        <button class="btn btn-warning" id="payPointsBtn">积分支付</button>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" id="backSeatBtn">返回</button>
+                    <button class="btn btn-sm btn-secondary" id="cancelBookingBtn3">取消</button>
+                `;
+                document.getElementById('payCashBtn').addEventListener('click', ()=>processPayment('cash'));
+                document.getElementById('payPointsBtn').addEventListener('click', ()=>processPayment('points'));
+                document.getElementById('backSeatBtn').addEventListener('click', ()=>showBookingStep('seatClass'));
+                document.getElementById('cancelBookingBtn3').addEventListener('click', closeBookingModal);
+                return;
+            }
+
+            // 普通座席选座
+            let letters = [];
+            if (seatClass === '二等座') letters = ['A','B','C','D','F'];
+            else if (seatClass === '一等座') letters = ['A','C','D','F'];
+            else if (seatClass === '商务座') letters = ['A','F'];
+            let seatsHtml = letters.map(l => `<button class="seat-btn" data-seat="${l}">${l}</button>`).join('');
+            content.innerHTML = `
+                <p style="margin-bottom:10px;">选择座位号 (${seatClass})</p>
+                <div class="seat-grid">${seatsHtml}</div>
+                <div style="margin:10px 0;">
+                    <button class="btn btn-sm btn-secondary" id="backSeatClassBtn">返回</button>
+                    <button class="btn btn-sm btn-secondary" id="cancelBookingBtn2">取消</button>
+                </div>
+            `;
+            content.querySelectorAll('.seat-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.seat-btn').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    currentBooking.seatLetter = this.dataset.seat;
+                    showBookingStep('payment');
+                });
+            });
+            document.getElementById('backSeatClassBtn').addEventListener('click', ()=>showBookingStep('seatClass'));
+            document.getElementById('cancelBookingBtn2').addEventListener('click', closeBookingModal);
+
+        } else if (step === 'payment') {
+            const model = currentBooking.model || '';
+            const seatClass = currentBooking.seatClass;
+            const carriage = getCarriageNumber(model, seatClass, currentBooking.checi);
+            currentBooking.carriage = carriage;
+            let rowRange;
+            if (seatClass === '二等座') rowRange = { min: 1, max: 18 };
+            else if (seatClass === '一等座') rowRange = { min: 1, max: 10 };
+            else if (seatClass === '商务座') rowRange = { min: 1, max: 3 };
+            const row = String(Math.floor(Math.random() * (rowRange.max - rowRange.min + 1)) + rowRange.min).padStart(2, '0');
+            currentBooking.row = row;
+            const seatDisplay = `${carriage}车${row}${currentBooking.seatLetter}号`;
+            let discountBadge = '';
+            if (currentBooking.isSleeper && (seatClass === '动卧下铺' || seatClass === '动卧上铺')) {
+                discountBadge = `<span class="discount-badge">(6折)</span>`;
+            }
+            content.innerHTML = `
+                <p style="margin-bottom:6px;"><strong>${currentBooking.checi}</strong> ${currentBooking.start} → ${currentBooking.end}</p>
+                <p style="font-size:14px;color:#4a5a6e;">${currentBooking.departTime} → ${currentBooking.arriveTime} 历时 ${currentBooking.duration}</p>
+                <p style="font-size:14px;color:#4a5a6e;">${currentBooking.seatClass} ${seatDisplay}  ¥${currentBooking.amount.toFixed(2)} ${discountBadge}</p>
+                <div class="pay-row">
+                    <button class="btn btn-success" id="payCashBtn">现金支付</button>
+                    <button class="btn btn-warning" id="payPointsBtn">积分支付</button>
+                </div>
+                <button class="btn btn-sm btn-secondary" id="backSeatBtn">返回</button>
+                <button class="btn btn-sm btn-secondary" id="cancelBookingBtn3">取消</button>
+            `;
+            document.getElementById('payCashBtn').addEventListener('click', ()=>processPayment('cash'));
+            document.getElementById('payPointsBtn').addEventListener('click', ()=>processPayment('points'));
+            document.getElementById('backSeatBtn').addEventListener('click', ()=>showBookingStep('seat'));
+            document.getElementById('cancelBookingBtn3').addEventListener('click', closeBookingModal);
+        }
+    }
+
+    function processPayment(method) {
+        if (!currentUser) return;
+        const amount = currentBooking.amount;
+        if (method === 'cash') {
+            if (currentUser.balance < amount) {
+                alert('余额不足，请选择其他支付方式或充值');
+                return;
+            }
+            currentUser.balance -= amount;
+        } else {
+            const pointsNeeded = Math.ceil(amount * 10);
+            if (currentUser.points < pointsNeeded) {
+                alert(`积分不足，需要 ${pointsNeeded} 积分`);
+                return;
+            }
+            currentUser.points -= pointsNeeded;
+        }
+
+        let seatDisplay = currentBooking.seatDisplay || `${currentBooking.carriage}车${currentBooking.row}${currentBooking.seatLetter}号`;
+        const order = {
+            checi: currentBooking.checi,
+            start: currentBooking.start,
+            end: currentBooking.end,
+            departTime: currentBooking.departTime,
+            arriveTime: currentBooking.arriveTime,
+            duration: currentBooking.duration,
+            date: currentBooking.date,
+            seatClass: currentBooking.seatClass,
+            seat: seatDisplay,
+            amount: amount,
+            paymentMethod: method,
+            status: 'paid',
+            orderTime: new Date().toISOString(),
+            completed: false,
+            pendingPoints: 0
+        };
+        if (!currentUser.orders) currentUser.orders = [];
+        currentUser.orders.push(order);
+        saveUserData();
+        updateUserUI();
+        closeBookingModal();
+        alert(`购票成功！\n${order.checi} ${order.start}→${order.end}\n${order.seatClass} ${order.seat}\n已支付 ¥${amount.toFixed(2)}\n积分将在到达目的地出站后获得`);
+        if (lastTravelResult) {
+            const dateStr = document.getElementById('travelDate').value;
+            renderTravelResult(lastTravelResult, currentSort, dateStr);
+        }
+    }
+
+    function closeBookingModal() {
+        document.getElementById('bookingModal').classList.remove('show');
+        currentBooking = null;
+    }
+
+    // ============================================================
+    // 退出功能
+    // ============================================================
+    let logoutTimer = null;
+    let logoutCountdown = 30;
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        const modal = document.getElementById('logoutConfirmModal');
+        modal.classList.add('show');
+        logoutCountdown = 30;
+        document.getElementById('logoutCountdown').textContent = logoutCountdown + 's';
+        document.getElementById('logoutConfirmBtn').disabled = true;
+        if (logoutTimer) clearInterval(logoutTimer);
+        logoutTimer = setInterval(() => {
+            logoutCountdown--;
+            document.getElementById('logoutCountdown').textContent = logoutCountdown + 's';
+            if (logoutCountdown <= 0) {
+                clearInterval(logoutTimer);
+                logoutTimer = null;
+                document.getElementById('logoutConfirmBtn').disabled = false;
+            }
+        }, 1000);
+    });
+    document.getElementById('logoutCancelBtn').addEventListener('click', function() {
+        document.getElementById('logoutConfirmModal').classList.remove('show');
+        if (logoutTimer) { clearInterval(logoutTimer); logoutTimer = null; }
+    });
+    document.getElementById('logoutConfirmBtn').addEventListener('click', function() {
+        currentUser = null;
+        localStorage.removeItem(STORAGE_KEY);
+        updateUserUI();
+        document.getElementById('logoutConfirmModal').classList.remove('show');
+        if (logoutTimer) { clearInterval(logoutTimer); logoutTimer = null; }
+        showPage('page-home');
+    });
+    document.getElementById('logoutConfirmModal').addEventListener('click', function(e) {
+        if (e.target === this) document.getElementById('logoutCancelBtn').click();
+    });
+
+    // ============================================================
+    // 查询相关函数
+    // ============================================================
+    function trimSeconds(t) {
+        if (!t) return '';
+        const parts = t.split(':');
+        return parts.length >= 2 ? parts[0] + ':' + parts[1] : t;
+    }
+    function timeToMinutes(t) {
+        if (!t) return 0;
+        const parts = t.split(':');
+        if (parts.length < 2) return 0;
+        return parseInt(parts[0])*60 + parseInt(parts[1]);
+    }
+    function calcDuration(depart, arrive) {
+        if (!depart || !arrive) return '--';
+        const d = depart.split(':').map(Number);
+        const a = arrive.split(':').map(Number);
+        let dm = d[0]*60 + d[1], am = a[0]*60 + a[1];
+        if (am < dm) am += 24*60;
+        const diff = am - dm;
+        const h = Math.floor(diff/60), m = diff % 60;
+        if (h === 0) return m + '分';
+        return h + '时' + m + '分';
+    }
+    function isPassengerTrain(train) {
+        if (train.passenger === 2) return true;
+        if (train.type) {
+            const t = train.type.trim();
+            if (t.includes('高速') || t.includes('动车组') || t.includes('城际')) return true;
+        }
+        return false;
+    }
+    function cleanName(name) {
+        if (!name) return '';
+        return name.replace(/\s/g, '').replace(/[<>]/g, '');
+    }
+    function isFuxing(model) {
+        if (!model) return false;
+        const m = model.trim().toUpperCase();
+        return m.startsWith('CR400') || m.startsWith('CR300');
+    }
+    function getModelAndOwner(checi) {
+        if (!checi) return { model: null, owner: null };
+        let model = checiToModel[checi];
+        let owner = checiToOwner[checi];
+        if (!model) {
+            const main = checi.split('/')[0];
+            model = checiToModel[main] || null;
+            owner = checiToOwner[main] || null;
+        }
+        return { model, owner };
+    }
+    function expandStation(input) {
+        if (!input) return [];
+        const trimmed = input.trim();
+        if (stationAliasMap[trimmed]) return stationAliasMap[trimmed];
+        return [trimmed];
+    }
+
+    function calcMileageFromLines(allStopNames, start, end) {
+        if (!allStopNames || allStopNames.length < 2) return null;
+        const cleanStart = cleanName(start);
+        const cleanEnd = cleanName(end);
+        if (cleanStart in YUANGUANG_MILEAGE && cleanEnd in YUANGUANG_MILEAGE) {
+            return Math.round(Math.abs(YUANGUANG_MILEAGE[cleanEnd] - YUANGUANG_MILEAGE[cleanStart]));
+        }
+        let startIdx = -1, endIdx = -1;
+        allStopNames.forEach((s,i) => {
+            if (cleanName(s) === cleanStart) startIdx = i;
+            if (cleanName(s) === cleanEnd) endIdx = i;
+        });
+        if (startIdx === -1 || endIdx === -1 || startIdx >= endIdx) return null;
+        let total = 0;
+        for (let i = startIdx; i < endIdx; i++) {
+            const from = cleanName(allStopNames[i]);
+            const to = cleanName(allStopNames[i+1]);
+            let dist = 0;
+            if (from in YUANGUANG_MILEAGE && to in YUANGUANG_MILEAGE) {
+                dist = Math.abs(YUANGUANG_MILEAGE[to] - YUANGUANG_MILEAGE[from]);
+            } else {
+                for (const lineName in lineStationMaps) {
+                    const map = lineStationMaps[lineName];
+                    if (map.hasOwnProperty(from) && map.hasOwnProperty(to)) {
+                        dist = Math.abs(map[to] - map[from]);
+                        break;
+                    }
+                }
+            }
+            if (dist > 0) total += dist;
+        }
+        return total > 0 ? Math.round(total) : null;
+    }
+
+    // ============================================================
+    // 查询车次
+    // ============================================================
+    function queryTrains(startList, endList, dateStr) {
+        if (!startList.length || !endList.length) return { error: '请填写起点和终点站' };
+        if (trainData.length === 0) return { error: '请先加载数据文件' };
+        const index = {};
+        trainData.forEach(train => {
+            if (!isPassengerTrain(train)) return;
+            const checi = train.checi[0] || train.checi;
+            const tt = train.timetable || [];
+            const allStopNames = tt.map(item => item.zhanming).filter(name => name);
+            const businessStops = tt.filter(item => item.business === true);
+            if (businessStops.length === 0) return;
+            const model = checiToModel[checi] || '';
+            const trainType = getTrainType(checi, train);
+            businessStops.forEach((item, idx) => {
+                const station = item.zhanming;
+                if (!station) return;
+                if (!index[station]) index[station] = [];
+                index[station].push({
+                    checi, departTime: item.cfsj || item.ddsj || '',
+                    arriveTime: item.ddsj || item.cfsj || '',
+                    fullTt: businessStops, stopIndex: idx,
+                    trainObj: train, allStopNames, model, trainType
+                });
+            });
+        });
+        const results = [];
+        for (let start of startList) {
+            for (let end of endList) {
+                const startRecords = index[start] || [];
+                const endRecords = index[end] || [];
+                if (!startRecords.length || !endRecords.length) continue;
+                const endMap = {};
+                endRecords.forEach(r => { if (!endMap[r.checi]) endMap[r.checi] = r; });
+                startRecords.forEach(sr => {
+                    const endInfo = endMap[sr.checi];
+                    if (!endInfo) return;
+                    if (sr.stopIndex === undefined || endInfo.stopIndex === undefined || sr.stopIndex >= endInfo.stopIndex) return;
+                    const dMin = timeToMinutes(sr.departTime);
+                    const aMin = timeToMinutes(endInfo.arriveTime);
+                    let durationMin = aMin - dMin;
+                    if (durationMin < 0) durationMin += 24*60;
+                    const totalMile = calcMileageFromLines(sr.allStopNames, start, end);
+                    const fares = calcFares(totalMile, sr.model, sr.trainType);
+                    results.push({
+                        checi: sr.checi,
+                        depart: sr.departTime,
+                        arrive: endInfo.arriveTime,
+                        fullTt: sr.fullTt,
+                        startStation: start,
+                        endStation: end,
+                        startIdx: sr.stopIndex,
+                        endIdx: endInfo.stopIndex,
+                        durationMin,
+                        totalMile,
+                        fares,
+                        model: sr.model,
+                        trainType: sr.trainType
+                    });
+                });
+            }
+        }
+        if (results.length === 0) return { error: '没有找到从该方向开行的旅客列车' };
+        return { data: results, count: results.length };
+    }
+
+    // ============================================================
+    // 渲染出行结果（列表¥xxx.x起，展开后橙底白字大按钮+分隔线）
+    // ============================================================
+    function renderTravelResult(result, sortMode, dateStr) {
+        const area = document.getElementById('resultAreaTravel');
+        if (result.error) {
+            area.innerHTML = `<div class="no-result">⚠️ ${result.error}</div>`;
+            return;
+        }
+        if (result.count === 0) {
+            area.innerHTML = `<div class="no-result">😕 没有找到满足条件的车次</div>`;
+            return;
+        }
+        let sorted = [...result.data];
+        if (sortMode === 'time') sorted.sort((a,b) => timeToMinutes(a.depart) - timeToMinutes(b.depart));
+        else if (sortMode === 'speed') sorted.sort((a,b) => a.durationMin - b.durationMin);
+        const today = getTodayStr();
+        let filtered = sorted;
+        if (dateStr === today) {
+            const now = new Date();
+            const nowMinutes = now.getHours()*60 + now.getMinutes();
+            filtered = sorted.filter(item => {
+                const depMin = timeToMinutes(item.depart);
+                return depMin > nowMinutes;
+            });
+        }
+        if (filtered.length === 0) {
+            area.innerHTML = `<div class="no-result">😕 今天的车次均已发车，请选择其他日期</div>`;
+            return;
+        }
+        let html = `<div class="result-header">共 <span>${filtered.length}</span> 趟车次</div>`;
+        filtered.forEach((item, idx) => {
+            const duration = calcDuration(item.depart, item.arrive);
+            const depShort = trimSeconds(item.depart);
+            const arrShort = trimSeconds(item.arrive);
+            const { model, owner } = getModelAndOwner(item.checi);
+            const isF = isFuxing(model);
+            let badgeHtml = '';
+            if (isF) badgeHtml = `<span class="badge-fuxing">复兴号</span>`;
+            const checiDisplay = `${item.checi} ${badgeHtml}`;
+            const routeDisplay = `${item.startStation} <span class="stop-time">${depShort}</span> <span class="arrow-symbol">→</span> ${item.endStation} <span class="stop-time">${arrShort}</span>`;
+
+            let priceDisplay = '--';
+            if (item.fares && item.fares.second !== undefined && item.fares.second !== null) {
+                const second = item.fares.second;
+                const hasOther = (item.fares.first !== null && item.fares.first !== undefined) ||
+                                 (item.fares.business !== null && item.fares.business !== undefined) ||
+                                 (item.trainType !== 'D') ||
+                                 SLEEPER_TRAINS.includes(item.checi || '');
+                if (hasOther) {
+                    priceDisplay = `¥${second.toFixed(1)}起`;
+                } else {
+                    priceDisplay = `¥${second.toFixed(1)}`;
+                }
+            }
+
+            html += `<div class="train-row" data-idx="${idx}">
+                        <span class="checi">${checiDisplay}</span>
+                        <span class="route-info">${routeDisplay}</span>
+                        <span class="duration">${duration}</span>
+                        <span class="price-2nd">${priceDisplay}</span>
+                        <span class="expand-icon">▼</span>
+                    </div>`;
+
+            html += `<div class="stop-detail" id="travelStop_${idx}">`;
+
+            // 时刻表
+            const tt = item.fullTt || [];
+            const si = item.startIdx, ei = item.endIdx;
+            html += `<div style="margin-bottom:8px;font-weight:600;font-size:14px;">📋 时刻表</div>`;
+            html += `<div class="stop-header"><span class="h-name">车站</span><span class="h-time">到站</span><span class="h-time">发车</span></div>`;
+            if (si !== undefined && ei !== undefined && si <= ei) {
+                tt.forEach((st, i) => {
+                    const inRange = (i >= si && i <= ei);
+                    const cls = inRange ? 'in-range' : 'out-range';
+                    const at = (i === 0) ? '始' : trimSeconds(st.ddsj || '');
+                    const dt = (i === tt.length-1) ? '终' : trimSeconds(st.cfsj || '');
+                    html += `<div class="stop-item ${cls}">
+                                <span class="stop-name">${st.zhanming}</span>
+                                <span class="stop-time arrive">${at}</span>
+                                <span class="stop-time depart">${dt}</span>
+                                <span class="stop-arrow">↓</span>
+                            </div>`;
+                    if (i === ei) html += `<div class="stop-divider">━━━ 查询区段结束 ━━━</div>`;
+                });
+            } else {
+                tt.forEach((st) => {
+                    const at = trimSeconds(st.ddsj || '');
+                    const dt = trimSeconds(st.cfsj || '');
+                    html += `<div class="stop-item out-range">
+                                <span class="stop-name">${st.zhanming}</span>
+                                <span class="stop-time arrive">${at}</span>
+                                <span class="stop-time depart">${dt}</span>
+                                <span class="stop-arrow">↓</span>
+                            </div>`;
+                });
+            }
+
+            // 车型担当
+            const modelDisplay = model || '--';
+            const ownerDisplay = owner || '--';
+            html += `<div class="stop-footer" style="margin-top:8px;padding-top:6px;border-top:1px solid #dce3ec;">
+                        <span class="label">车型：</span>${modelDisplay}　　<span class="label">担当局段：</span>${ownerDisplay}
+                      </div>`;
+
+            // ---- 全部席别 + 独立预定（橙底白字大按钮，分隔线） ----
+            const isSleeper = SLEEPER_TRAINS.includes(item.checi || '');
+            let seatClasses = [];
+            if (isSleeper) {
+                const second = item.fares.second;
+                // 下铺 = 一等座+0.05*里程，上铺 = 一等座
+                const lower = item.fares.first + 0.05 * (item.totalMile || 300);
+                const upper = item.fares.first;
+                seatClasses = [
+                    { name: '二等座', price: second, discount: false },
+                    { name: '动卧下铺', price: lower, discount: true },
+                    { name: '动卧上铺', price: upper, discount: true }
+                ];
+            } else {
+                const second = item.fares.second;
+                const first = item.fares.first;
+                const business = item.fares.business;
+                const isD = item.trainType === 'D';
+                seatClasses = [{ name: '二等座', price: second, discount: false }];
+                if (first !== null && first !== undefined) {
+                    seatClasses.push({ name: '一等座', price: first, discount: false });
+                }
+                if (!isD && business !== null && business !== undefined) {
+                    seatClasses.push({ name: '商务座', price: business, discount: false });
+                }
+            }
+
+            html += `<div style="margin-top:8px;padding-top:6px;border-top:1px solid #dce3ec;">`;
+            html += `<div style="font-weight:600;font-size:14px;margin-bottom:4px;">🎫 选择席别预定</div>`;
+            seatClasses.forEach(sc => {
+                const priceStr = sc.price.toFixed(1);
+                const discountBadge = sc.discount ? `<span class="discount-badge">(6折)</span>` : '';
+                const btnData = `data-checi="${item.checi}" data-start="${item.startStation}" data-end="${item.endStation}" data-depart="${item.depart}" data-arrive="${item.arrive}" data-duration="${duration}" data-seatclass="${sc.name}" data-price="${sc.price}" data-model="${model}" data-owner="${owner}" data-totalmile="${item.totalMile || 300}"`;
+                html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #e0e0e0;">
+                            <span style="font-size:15px;">${sc.name} ¥${priceStr} ${discountBadge}</span>
+                            <button class="book-btn" ${btnData} style="background:#e37400;color:white;border:none;padding:6px 16px;border-radius:6px;font-size:15px;font-weight:700;cursor:pointer;">预定</button>
+                        </div>`;
+            });
+            html += `</div>`;
+
+            html += `</div>`; // 结束 stop-detail
+        });
+        area.innerHTML = html;
+
+        // 展开/折叠
+        document.querySelectorAll('#resultAreaTravel .train-row').forEach(row => {
+            row.addEventListener('click', function(e) {
+                if (e.target.classList.contains('book-btn')) return;
+                const idx = this.dataset.idx;
+                const detail = document.getElementById('travelStop_' + idx);
+                const icon = this.querySelector('.expand-icon');
+                if (detail) {
+                    detail.classList.toggle('open');
+                    if (icon) icon.classList.toggle('open');
+                }
+            });
+        });
+
+        // 展开后的独立预定按钮（已内联样式，无需额外绑定）
+    }
+
+    // ============================================================
+    // 时刻表查询
+    // ============================================================
+    function queryTimetable(inputCheci) {
+        if (!inputCheci) return { error: '请输入车次' };
+        if (trainData.length === 0) return { error: '请先加载数据文件' };
+        let foundTrain = null;
+        for (let train of trainData) {
+            const checiArr = train.checi || [];
+            const list = Array.isArray(checiArr) ? checiArr : [checiArr];
+            for (let c of list) {
+                if (c === inputCheci || c.split('/')[0] === inputCheci || inputCheci === c.split('/')[0]) {
+                    foundTrain = train;
+                    break;
+                }
+            }
+            if (foundTrain) break;
+        }
+        if (!foundTrain) return { error: '未找到该车次' };
+        const tt = foundTrain.timetable || [];
+        const businessStops = tt.filter(item => item.business === true);
+        if (businessStops.length === 0) return { error: '该车次无营业站数据' };
+        const mainCheci = Array.isArray(foundTrain.checi) ? foundTrain.checi[0] : foundTrain.checi;
+        const model = checiToModel[mainCheci] || '';
+        const owner = checiToOwner[mainCheci] || '';
+        const startStation = businessStops[0].zhanming;
+        const endStation = businessStops[businessStops.length - 1].zhanming;
+        const allStopNames = tt.map(item => item.zhanming).filter(name => name);
+        const totalMile = calcMileageFromLines(allStopNames, startStation, endStation);
+        return {
+            train: foundTrain, businessStops, model, owner,
+            totalMile, startStation, endStation, displayCheci: mainCheci
+        };
+    }
+
+    function renderTimetableResult(result) {
+        const area = document.getElementById('resultAreaTimetable');
+        if (result.error) {
+            area.innerHTML = `<div class="no-result">⚠️ ${result.error}</div>`;
+            return;
+        }
+        const { businessStops, model, owner, totalMile, startStation, endStation, displayCheci } = result;
+        const isF = isFuxing(model);
+        let badgeHtml = '';
+        if (isF) badgeHtml = `<span class="badge-fuxing">复兴号</span>`;
+        let html = `<div class="result-header">${displayCheci} ${badgeHtml}</div>`;
+        html += `<div style="padding:10px 16px;border-bottom:1px solid #e9edf4;font-size:14px;color:#2c3e50;display:flex;flex-wrap:wrap;gap:6px 16px;background:#fafcff;">
+            <span><span style="font-weight:600;">始发：</span>${startStation}</span>
+            <span><span style="font-weight:600;">终到：</span>${endStation}</span>
+            <span><span style="font-weight:600;">车型：</span>${model || '--'}</span>
+            <span><span style="font-weight:600;">担当：</span>${owner || '--'}</span>
+            <span><span style="font-weight:600;">全程里程：</span>${totalMile !== null ? totalMile + ' km' : '--'}</span>
+        </div>`;
+        html += `<table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead><tr style="background:#eef3fa;font-weight:600;">
+                <th style="padding:6px 10px;text-align:left;">车站</th>
+                <th style="padding:6px 10px;text-align:left;">到点</th>
+                <th style="padding:6px 10px;text-align:left;">开点</th>
+                <th style="padding:6px 10px;text-align:left;">停时</th>
+            </tr></thead><tbody>`;
+        businessStops.forEach((st, i) => {
+            const arrive = (i === 0) ? '始' : (st.ddsj ? trimSeconds(st.ddsj) : '');
+            const depart = (i === businessStops.length - 1) ? '终' : (st.cfsj ? trimSeconds(st.cfsj) : '');
+            let stopTime = '--';
+            if (i > 0 && i < businessStops.length - 1 && st.ddsj && st.cfsj) {
+                const arrMin = timeToMinutes(st.ddsj);
+                const depMin = timeToMinutes(st.cfsj);
+                const diff = depMin - arrMin;
+                if (diff > 0) stopTime = diff + '分';
+            }
+            html += `<tr style="border-bottom:1px solid #f0f3f8;">
+                <td style="padding:5px 10px;font-weight:500;">${st.zhanming}</td>
+                <td style="padding:5px 10px;font-family:monospace;">${arrive}</td>
+                <td style="padding:5px 10px;font-family:monospace;">${depart}</td>
+                <td style="padding:5px 10px;font-family:monospace;">${stopTime}</td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        if (totalMile !== null && totalMile > 0) {
+            const trainType = getTrainType(displayCheci, null);
+            const fares = calcFares(totalMile, model, trainType);
+            if (fares) {
+                let priceStr = '';
+                if (fares.second !== null) priceStr += `二等座 ¥${fares.second.toFixed(1)}  `;
+                if (fares.first !== null) priceStr += `一等座 ¥${fares.first.toFixed(1)}  `;
+                if (fares.business !== null && trainType !== 'D') priceStr += `商务座 ¥${fares.business.toFixed(1)}`;
+                html += `<div style="padding:8px 16px;background:#f8fafc;border-top:1px solid #e9edf4;font-size:14px;color:#1a3a5a;display:flex;flex-wrap:wrap;gap:4px 16px;">
+                    <span style="font-weight:600;">票价参考（全程）：</span>
+                    <span>${priceStr}</span>
+                </div>`;
+            }
+        }
+        area.innerHTML = html;
+    }
+
+    // ============================================================
+    // 页面切换
+    // ============================================================
+    function showPage(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+    document.getElementById('gotoTravel').addEventListener('click', ()=>showPage('page-travel'));
+    document.getElementById('gotoScreen').addEventListener('click', ()=>showPage('page-screen'));
+    document.getElementById('gotoTimetable').addEventListener('click', ()=>showPage('page-timetable'));
+    document.getElementById('gotoMe').addEventListener('click', ()=>showPage('page-me'));
+    document.getElementById('backHomeFromTravel').addEventListener('click', ()=>showPage('page-home'));
+    document.getElementById('backHomeFromScreen').addEventListener('click', ()=>showPage('page-home'));
+    document.getElementById('backHomeFromTimetable').addEventListener('click', ()=>showPage('page-home'));
+    document.getElementById('backHomeFromMe').addEventListener('click', ()=>showPage('page-home'));
+
+    // ============================================================
+    // 文件加载
+    // ============================================================
+    document.getElementById('fileInputHome').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            try {
+                const json = JSON.parse(ev.target.result);
+                if (Array.isArray(json)) trainData = json;
+                else if (json.trains && Array.isArray(json.trains)) trainData = json.trains;
+                else throw new Error('未找到 trains 数组');
+                checiToModel = {}; checiToOwner = {};
+                if (json.circuits && Array.isArray(json.circuits)) {
+                    json.circuits.forEach(circuit => {
+                        const model = circuit.model || '';
+                        const owner = circuit.owner || '';
+                        const orders = circuit.order || [];
+                        orders.forEach(item => {
+                            const checi = item.checi;
+                            if (checi) {
+                                if (!checiToModel[checi]) checiToModel[checi] = model;
+                                if (!checiToOwner[checi]) checiToOwner[checi] = owner;
+                            }
+                        });
+                    });
+                }
+                lineStationMaps = {};
+                if (json.lines && Array.isArray(json.lines)) {
+                    json.lines.forEach(line => {
+                        const lineName = line.name;
+                        const stations = line.stations || [];
+                        const map = {};
+                        stations.forEach(st => {
+                            const name = st.zhanming;
+                            const mile = st.licheng;
+                            if (name && mile !== undefined) {
+                                const key = cleanName(name);
+                                map[key] = mile;
+                            }
+                        });
+                        if (Object.keys(map).length > 1) {
+                            lineStationMaps[lineName] = map;
+                        }
+                    });
+                }
+                document.getElementById('statusMsgHome').textContent = '✅ 加载成功，共 ' + trainData.length + ' 个车次';
+                document.getElementById('statusMsgHome').className = 'status';
+            } catch (err) {
+                document.getElementById('statusMsgHome').textContent = '❌ 解析失败：' + err.message;
+                document.getElementById('statusMsgHome').className = 'status error';
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    // ============================================================
+    // 用户登录
+    // ============================================================
+    document.getElementById('loginBtn').addEventListener('click', function() {
+        const nickname = document.getElementById('nicknameInput').value.trim();
+        if (!nickname) {
+            document.getElementById('loginMsg').textContent = '请输入昵称';
+            return;
+        }
+        const saved = localStorage.getItem(STORAGE_KEY);
+        let user = null;
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.nickname === nickname) {
+                    user = data;
+                }
+            } catch(e) {}
+        }
+        if (!user) {
+            user = createNewUser(nickname);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+        }
+        currentUser = user;
+        saveUserData();
+        updateUserUI();
+        document.getElementById('loginMsg').textContent = '';
+        showPage('page-home');
+    });
+    document.getElementById('signBtn').addEventListener('click', doSign);
+    document.getElementById('modalCloseBtn').addEventListener('click', closeBookingModal);
+    document.getElementById('bookingModal').addEventListener('click', function(e) {
+        if (e.target === this) closeBookingModal();
+    });
+
+    // ============================================================
+    // 日期选择
+    // ============================================================
+    const todayStr = getTodayStr();
+    document.getElementById('travelDate').value = todayStr;
+    document.getElementById('travelDate').min = todayStr;
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 7);
+    document.getElementById('travelDate').max = maxDate.toISOString().split('T')[0];
+
+    function updateDateDisplay() {
+        const val = document.getElementById('travelDate').value;
+        document.getElementById('dateDisplay').textContent = formatDateDisplay(val);
+    }
+    document.getElementById('travelDate').addEventListener('change', updateDateDisplay);
+    document.getElementById('prevDayBtn').addEventListener('click', function() {
+        const date = new Date(document.getElementById('travelDate').value);
+        date.setDate(date.getDate() - 1);
+        const min = new Date(todayStr);
+        if (date < min) return;
+        const d = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+        document.getElementById('travelDate').value = d;
+        updateDateDisplay();
+    });
+    document.getElementById('nextDayBtn').addEventListener('click', function() {
+        const date = new Date(document.getElementById('travelDate').value);
+        date.setDate(date.getDate() + 1);
+        const max = new Date();
+        max.setDate(max.getDate() + 7);
+        if (date > max) return;
+        const d = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0') + '-' + String(date.getDate()).padStart(2,'0');
+        document.getElementById('travelDate').value = d;
+        updateDateDisplay();
+    });
+    updateDateDisplay();
+
+    // ============================================================
+    // 查询按钮
+    // ============================================================
+    function doTravelSearch() {
+        const start = document.getElementById('startStation').value.trim();
+        const end = document.getElementById('endStation').value.trim();
+        const dateStr = document.getElementById('travelDate').value;
+        if (!start || !end) {
+            document.getElementById('resultAreaTravel').innerHTML = `<div class="no-result">请填写起点和终点</div>`;
+            return;
+        }
+        const startList = expandStation(start);
+        const endList = expandStation(end);
+        if (!startList.length || !endList.length) {
+            document.getElementById('resultAreaTravel').innerHTML = `<div class="no-result">输入的车站无效</div>`;
+            return;
+        }
+        const result = queryTrains(startList, endList, dateStr);
+        lastTravelResult = result;
+        renderTravelResult(result, currentSort, dateStr);
+    }
+    document.getElementById('searchBtn').addEventListener('click', doTravelSearch);
+    document.querySelectorAll('#page-travel input').forEach(inp => {
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') doTravelSearch(); });
+    });
+    document.querySelectorAll('#page-travel .btn-sort').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#page-travel .btn-sort').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentSort = this.dataset.sort;
+            if (lastTravelResult && !lastTravelResult.error) {
+                const dateStr = document.getElementById('travelDate').value;
+                renderTravelResult(lastTravelResult, currentSort, dateStr);
+            } else {
+                doTravelSearch();
+            }
+        });
+    });
+
+    // ============================================================
+    // 车站大屏（不变）
+    // ============================================================
+    let screenDirection = 'depart';
+    let screenMode = 'realtime';
+
+    document.querySelectorAll('#page-screen .tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('#page-screen .tab').forEach(t => {
+                t.classList.remove('active');
+                t.style.borderColor = '#d0d9e6';
+                t.style.background = 'white';
+                t.style.color = '#2c3e50';
+            });
+            this.classList.add('active');
+            this.style.borderColor = '#1a73e8';
+            this.style.background = '#e8f0fe';
+            this.style.color = '#1a73e8';
+            screenDirection = this.dataset.direction;
+        });
+    });
+    document.querySelector('#page-screen .tab[data-direction="depart"]').click();
+
+    document.querySelectorAll('#page-screen .mode-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('#page-screen .mode-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.borderColor = '#d0d9e6';
+                b.style.background = 'white';
+                b.style.color = '#2c3e50';
+            });
+            this.classList.add('active');
+            this.style.borderColor = '#1a73e8';
+            this.style.background = '#e8f0fe';
+            this.style.color = '#1a73e8';
+            screenMode = this.dataset.mode;
+        });
+    });
+
+    function renderScreenResult(data, station, direction) {
+        const area = document.getElementById('resultAreaScreen');
+        if (!data || data.length === 0) {
+            area.innerHTML = `<div class="no-result">😕 当前没有从「${station}」${direction === 'depart' ? '出发' : '到达'}的旅客列车</div>`;
+            return;
+        }
+
+        const now = new Date();
+        const todayStr = getTodayStr();
+        let filtered = data;
+
+        if (screenMode === 'realtime') {
+            if (direction === 'depart') {
+                filtered = data.filter(item => {
+                    const date = item.date || todayStr;
+                    if (date !== todayStr) return false;
+                    const depMin = timeToMinutes(item.time);
+                    const nowMin = now.getHours()*60 + now.getMinutes();
+                    return depMin > nowMin;
+                });
+            } else {
+                const nowMin = now.getHours()*60 + now.getMinutes();
+                filtered = data.filter(item => {
+                    const date = item.date || todayStr;
+                    if (date !== todayStr) return false;
+                    const arrMin = timeToMinutes(item.time);
+                    return Math.abs(arrMin - nowMin) <= 60;
+                });
+            }
+        }
+
+        if (filtered.length === 0) {
+            area.innerHTML = `<div class="no-result">😕 当前${screenMode === 'realtime' ? '实时' : ''}模式下没有符合条件的车次</div>`;
+            return;
+        }
+
+        filtered.sort((a,b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+
+        const headerTime = direction === 'depart' ? '开点' : '到点';
+        let html = `<div class="result-header">${station} · ${direction === 'depart' ? '🚉 出发' : '🏁 到达'} · 共 <span>${filtered.length}</span> 趟 ${screenMode === 'realtime' ? '(实时)' : ''}</div>`;
+        html += `<div class="table-wrap" style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;">
+            <thead><tr style="background:#eef3fa;font-weight:600;">
+                <th style="padding:8px 6px;text-align:left;">车次</th>
+                <th style="padding:8px 6px;text-align:left;">${headerTime}</th>
+                <th style="padding:8px 6px;text-align:left;">始发站</th>
+                <th style="padding:8px 6px;text-align:left;">终到站</th>`;
+        if (screenMode === 'realtime') {
+            html += `<th style="padding:8px 6px;text-align:left;">状态</th>`;
+        }
+        html += `</tr></thead><tbody>`;
+
+        filtered.forEach(item => {
+            const timeShort = trimSeconds(item.time);
+            const { model } = getModelAndOwner(item.checi);
+            const isF = isFuxing(model);
+            let badgeHtml = '';
+            if (isF) badgeHtml = `<span class="badge-fuxing" style="background:#ffd700;color:#1a1a1a;font-size:10px;font-weight:700;padding:1px 4px;border-radius:4px;margin-left:4px;">复兴号</span>`;
+            const checiDisplay = `${item.checi} ${badgeHtml}`;
+            const tt = item.fullTt || [];
+            const startStation = tt.length > 0 ? tt[0].zhanming : '';
+            const endStation = tt.length > 0 ? tt[tt.length-1].zhanming : '';
+
+            let statusHtml = '';
+            if (screenMode === 'realtime') {
+                if (direction === 'depart') {
+                    const isStart = (startStation === station);
+                    const isBig = BIG_STATIONS.includes(station);
+                    const isSpecial = (station === SPECIAL_STATION && isStart);
+                    let checkTime = 0;
+                    if (isSpecial) checkTime = 30;
+                    else if (isBig) checkTime = isStart ? 25 : 20;
+                    else checkTime = isStart ? 20 : 15;
+                    const stopCheck = isBig ? 5 : 3;
+                    const depMin = timeToMinutes(item.time);
+                    const nowMin = now.getHours()*60 + now.getMinutes();
+                    const diff = depMin - nowMin;
+                    let statusText = '候车';
+                    let statusClass = 'waiting';
+                    if (diff <= stopCheck && diff >= 0) {
+                        statusText = '停止检票';
+                        statusClass = 'stopped';
+                    } else if (diff > stopCheck && diff <= checkTime) {
+                        statusText = '正在检票';
+                        statusClass = 'checking';
+                    }
+                    statusHtml = `<span class="status-badge ${statusClass}">${statusText}</span>`;
+                } else {
+                    const nowMin = now.getHours()*60 + now.getMinutes();
+                    const arrMin = timeToMinutes(item.time);
+                    const diff = arrMin - nowMin;
+                    if (diff < 0) {
+                        statusHtml = `<span class="status-badge arrived">已到站</span>`;
+                    } else {
+                        statusHtml = `<span class="status-badge ontime">预计正点</span>`;
+                    }
+                }
+            }
+
+            html += `<tr>
+                <td style="padding:6px 6px;font-weight:700;color:#003b6f;">${checiDisplay}</td>
+                <td style="padding:6px 6px;font-family:monospace;">${timeShort}</td>
+                <td style="padding:6px 6px;">${startStation}</td>
+                <td style="padding:6px 6px;">${endStation}</td>`;
+            if (screenMode === 'realtime') {
+                html += `<td style="padding:6px 6px;">${statusHtml}</td>`;
+            }
+            html += `</tr>`;
+        });
+        html += `</tbody></table></div>`;
+        area.innerHTML = html;
+    }
+
+    function doScreenSearch() {
+        const station = document.getElementById('screenStation').value.trim();
+        if (!station) {
+            document.getElementById('resultAreaScreen').innerHTML = `<div class="no-result">请输入车站名称</div>`;
+            return;
+        }
+        if (trainData.length === 0) {
+            document.getElementById('resultAreaScreen').innerHTML = `<div class="no-result">请先在首页加载数据文件</div>`;
+            return;
+        }
+        const results = [];
+        const todayStr = getTodayStr();
+        trainData.forEach(train => {
+            if (!isPassengerTrain(train)) return;
+            const checi = train.checi[0] || train.checi;
+            const tt = train.timetable || [];
+            const businessStops = tt.filter(item => item.business === true);
+            if (businessStops.length === 0) return;
+            let pos = -1;
+            businessStops.forEach((item, i) => {
+                if (item.zhanming === station) pos = i;
+            });
+            if (pos === -1) return;
+            const item = businessStops[pos];
+            const isFirst = (pos === 0);
+            const isLast = (pos === businessStops.length - 1);
+            if (screenDirection === 'depart') {
+                if (isLast) return;
+                if (!item.cfsj) return;
+                results.push({
+                    checi,
+                    time: item.cfsj,
+                    fullTt: businessStops,
+                    date: todayStr
+                });
+            } else {
+                if (isFirst) return;
+                if (!item.ddsj) return;
+                results.push({
+                    checi,
+                    time: item.ddsj,
+                    fullTt: businessStops,
+                    date: todayStr
+                });
+            }
+        });
+        renderScreenResult(results, station, screenDirection);
+    }
+
+    document.getElementById('screenSearchBtn').addEventListener('click', doScreenSearch);
+    document.getElementById('screenStation').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') doScreenSearch();
+    });
+    document.getElementById('screenRefreshBtn').addEventListener('click', doScreenSearch);
+    document.getElementById('homeRefreshBtn').addEventListener('click', renderUpcomingTrips);
+
+    // ============================================================
+    // 时刻表查询按钮
+    // ============================================================
+    document.getElementById('timetableSearchBtn').addEventListener('click', function() {
+        const checi = document.getElementById('timetableCheci').value.trim();
+        const result = queryTimetable(checi);
+        renderTimetableResult(result);
+    });
+    document.getElementById('timetableCheci').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') document.getElementById('timetableSearchBtn').click();
+    });
+
+    // ============================================================
+    // 初始化
+    // ============================================================
+    if (loadUserData()) {
+        updateUserUI();
+    } else {
+        updateUserUI();
+    }
+    setTimeout(() => {
+        if (currentUser) {
+            document.getElementById('userStatusBar').style.display = 'flex';
+        }
+    }, 100);
+    console.log('铁路旅客信息查询系统已启动 (最终版)');
+</script>
+</body>
+</html>
